@@ -1,0 +1,7 @@
+﻿## Interface: 50001
+## Author: Loshine
+## Title: |cff777777shadow priest |rball
+## Notes: 被EK抓壯丁惹...
+## Version: v1.3
+
+spball.lua

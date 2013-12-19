@@ -1,0 +1,6 @@
+## Interface: 53000
+## Title: TellMeCooldown
+## Version: 0.1
+## Author: Me
+
+TellMeCooldown.lua

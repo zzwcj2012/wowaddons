@@ -1,0 +1,18 @@
+﻿## Interface: 40100
+## Title: |cff00FF55AutoMacro Alpha r1|r
+## Notes: Skip unavailable macro lines automatically.
+## Author: AK-48
+## DefaultState: Enabled
+## SavedVariables:
+
+#Libs\LibStub\LibStub.lua
+#Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+#Libs\LibHealComm-4.0\LibHealComm-4.0.xml
+
+AM_Core.lua
+AM_Functions.lua
+AM_AutoSel.lua
+AM_Dispel.lua
+AM_DPSTemplate.lua
+AM_DPSShadowPriest.lua
+AM_DPSShadowPriestDual.lua

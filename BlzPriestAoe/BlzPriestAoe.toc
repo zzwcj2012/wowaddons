@@ -1,0 +1,9 @@
+## Author: AK-48
+## Interface: 50400
+## Title: BlzPriestAoe
+## Version: 1.0
+
+libs\LibStub.lua
+libs\CallbackHandler-1.0.lua
+libs\library.lua
+BlzPriestAoe.lua
