@@ -44,26 +44,32 @@ function Interruptable(target,blacklist)
 	
 end
 
-function UnitAuraTime(target,aura,ismine)
+function UnitAuraTime(target,aura,ismine,spellid)
 	for i=1,64 do
 		local filter 
 		if ismine then
 			local filter = "PLAYER"
 		end
 		
-		local name,_, _, count, _, _, expires = UnitAura(target,i,filter)
+		local name,_, _, count, _, _, expires,_,_,_,id  = UnitAura(target,i,filter)
 			
 		if name and name == aura then
-			return expires - GetTime(),count
+			if spellid and id ~= spellid then else
+				return expires - GetTime(),count
+			end
 		end
 	end
 	for i=1,64 do
-		local name,_, _, count, _, _, expires,caster = UnitDebuff(target,i)
+		local name,_, _, count, _, _, expires,caster,_,_,id = UnitDebuff(target,i)
 		if name and name == aura then
+			if spellid and id ~= spellid then else
 			if ismine and caster~= "player" then else return expires - GetTime(),count end
+		end
 		end
 	end
 end
+
+
 
 function GetSpellHighestRank(spellName)
 	local hRank = select(2,GetSpellInfo(spellName))

@@ -15,4 +15,5 @@ AM_AutoSel.lua
 AM_Dispel.lua
 AM_DPSTemplate.lua
 AM_DPSShadowPriest.lua
+AM_ProtPaladin.lua
 AM_DPSShadowPriestDual.lua

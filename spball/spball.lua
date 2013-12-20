@@ -1,4 +1,14 @@
-if select(2,UnitClass("player")) ~= "PRIEST" then return end
+local size
+local energy
+if select(2,UnitClass("player")) == "PRIEST" then
+	size = 3
+	energy = SPELL_POWER_SHADOW_ORBS
+elseif  select(2,UnitClass("player")) == "PALADIN" then
+	size = 5
+	energy = SPELL_POWER_HOLY_POWER
+else
+	return  
+end
 
 -- 設置
 local barsize = {200,15}											-- 大小
@@ -29,9 +39,9 @@ bar:SetBackdropBorderColor(0, 0, 0)
 crateshadow(bar)
 
 local bbar = CreateFrame("Frame", nil, bar)
-for i = 1, 3 do
+for i = 1, size do
 	bbar[i] = CreateFrame("StatusBar", nil, bbar)
-	bbar[i]:SetSize((bar:GetWidth()-4)/3, bar:GetHeight()-2)
+	bbar[i]:SetSize((bar:GetWidth()-4)/size, bar:GetHeight()-2)
 	bbar[i]:SetStatusBarTexture(statusbartexture)
 	bbar[i]:SetStatusBarColor(unpack(bballcolor))
 	bbar[i]:SetAlpha(.15)
@@ -45,13 +55,13 @@ end
 
 local function OnEvent(self,event)
 	-- 黑球部份
-	local numOrbs = UnitPower("player", SPELL_POWER_SHADOW_ORBS)
+	local numOrbs = UnitPower("player", energy)
 	if numOrbs ~= 0 then
 		for i = 1, numOrbs do
 			bbar[i]:SetAlpha(1)
 		end
 	else
-		for i = 1, 3 do
+		for i = 1, size do
 			bbar[i]:SetAlpha(.15)
 		end
 	end
