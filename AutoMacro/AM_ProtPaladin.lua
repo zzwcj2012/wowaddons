@@ -30,7 +30,8 @@ local function Cooldown(spell)
 end
 
 function AM_ProtPaladin:Request()
-	AM_DPSTemplate:Request(self)
+	AM_DPSTemplate.Request(self)
+
 	self.CastSpell = nil
 	local holyPower = UnitPower("player",SPELL_POWER_HOLY_POWER)
 	local spellPower = UnitAuraTime("player",self.HolyAvenger) and 3 or 1
@@ -38,6 +39,7 @@ function AM_ProtPaladin:Request()
 		self.CastSpell = self.SpellTable[7]
 		return
 	end
+	
 	local tolerance = 0.2
 	local crusaderStrikeSpell = self.AOE and self.SpellTable[5] or self.SpellTable[1]
 	local crusaderStrikeCD = Cooldown(crusaderStrikeSpell)
@@ -47,7 +49,7 @@ function AM_ProtPaladin:Request()
 		return
 	end
 	if crusaderStrikeCD < tolerance then
-		self.CastSpell = judgementCD < crusaderStrikeCD and crusaderStrikeSpell or self.SpellTable[2]
+		self.CastSpell = crusaderStrikeCD - judgementCD > 0.2  and self.SpellTable[2] or crusaderStrikeSpell
 		return
 	end
 	if judgementCD < tolerance then
@@ -55,7 +57,7 @@ function AM_ProtPaladin:Request()
 		return
 	end
 	if UnitAuraTime("player",self.DivinePurpose) and Cooldown(self.SpellTable[7]) == 0 then
-		self.CastSpell = self.SpellTable[7])
+		self.CastSpell = self.SpellTable[7]
 		return
 	end
 
