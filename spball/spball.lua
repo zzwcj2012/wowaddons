@@ -41,7 +41,7 @@ crateshadow(bar)
 local bbar = CreateFrame("Frame", nil, bar)
 for i = 1, size do
 	bbar[i] = CreateFrame("StatusBar", nil, bbar)
-	bbar[i]:SetSize((bar:GetWidth()-4)/3, bar:GetHeight()-2)
+	bbar[i]:SetSize((bar:GetWidth()-4)/size, bar:GetHeight()-2)
 	bbar[i]:SetStatusBarTexture(statusbartexture)
 	bbar[i]:SetStatusBarColor(unpack(bballcolor))
 	bbar[i]:SetAlpha(.15)
@@ -55,8 +55,11 @@ end
 
 local function OnEvent(self,event)
 	-- ºÚÇò²¿·Ý
-	local numOrbs = UnitPower("player", energy)
+	local numOrbs = UnitPower("player", SPELL_POWER_HOLY_POWER)
 	if numOrbs ~= 0 then
+		for i = 1, size do
+			bbar[i]:SetAlpha(.15)
+		end
 		for i = 1, numOrbs do
 			bbar[i]:SetAlpha(1)
 		end
