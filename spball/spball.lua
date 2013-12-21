@@ -55,7 +55,7 @@ end
 
 local function OnEvent(self,event)
 	-- ºÚÇò²¿·Ý
-	local numOrbs = UnitPower("player", SPELL_POWER_HOLY_POWER)
+	local numOrbs = UnitPower("player", energy)
 	if numOrbs ~= 0 then
 		for i = 1, size do
 			bbar[i]:SetAlpha(.15)
