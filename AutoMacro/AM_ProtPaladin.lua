@@ -15,6 +15,7 @@ function AM_ProtPaladin:Init()
 	self.HolyAvenger = GetSpellInfo(105809)
 	self.DivinePurpose = GetSpellInfo(90174)
 	self.GrandCrusader = GetSpellInfo(85416)
+	self.Vengeance = GetSpellInfo(84839)
 
 	self:CreateActionButton()	
 end
@@ -33,9 +34,15 @@ function AM_ProtPaladin:Request()
 	AM_DPSTemplate.Request(self)
 
 	self.CastSpell = nil
+	local shieldTime = UnitAuraTime("player",self.SpellTable[7])
+	local vengeanceTime = UnitAuraTime("player", self.Vengeance, true)
 	local holyPower = UnitPower("player",SPELL_POWER_HOLY_POWER)
 	local spellPower = UnitAuraTime("player",self.HolyAvenger) and 3 or 1
 	if holyPower + spellPower > 5 then
+		self.CastSpell = self.SpellTable[7]
+		return
+	end
+	if not shieldTime and vengeanceTime < 18.3 then
 		self.CastSpell = self.SpellTable[7]
 		return
 	end
