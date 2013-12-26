@@ -42,7 +42,7 @@ function AM_ProtPaladin:Request()
 		self.CastSpell = self.SpellTable[7]
 		return
 	end
-	if not shieldTime and vengeanceTime < 18.3 then
+	if not shieldTime and vengeanceTime and vengeanceTime < 18.6 then
 		self.CastSpell = self.SpellTable[7]
 		return
 	end
