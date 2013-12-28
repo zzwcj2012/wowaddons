@@ -38,11 +38,8 @@ function AM_ProtPaladin:Request()
 	local vengeanceTime = UnitAuraTime("player", self.Vengeance, true)
 	local holyPower = UnitPower("player",SPELL_POWER_HOLY_POWER)
 	local spellPower = UnitAuraTime("player",self.HolyAvenger) and 3 or 1
-	if holyPower + spellPower > 5 then
-		self.CastSpell = self.SpellTable[7]
-		return
-	end
-	if not shieldTime and vengeanceTime and vengeanceTime < 18.6 then
+	
+	if not shieldTime and vengeanceTime and vengeanceTime < 18.7 and vengeanceTime > 18 and holyPower > 2 then
 		self.CastSpell = self.SpellTable[7]
 		return
 	end
@@ -52,14 +49,26 @@ function AM_ProtPaladin:Request()
 	local crusaderStrikeCD = Cooldown(crusaderStrikeSpell)
 	local judgementCD = Cooldown(self.SpellTable[2])
 	if UnitAuraTime("player",self.GrandCrusader) then
+		if holyPower + spellPower > 5 then
+			self.CastSpell = self.SpellTable[7]
+			return
+		end
 		self.CastSpell = self.SpellTable[3]
 		return
 	end
 	if crusaderStrikeCD < tolerance then
+		if holyPower + spellPower > 5 then
+			self.CastSpell = self.SpellTable[7]
+			return
+		end
 		self.CastSpell = crusaderStrikeCD - judgementCD > 0.2  and self.SpellTable[2] or crusaderStrikeSpell
 		return
 	end
 	if judgementCD < tolerance then
+		if holyPower + spellPower > 5 then
+			self.CastSpell = self.SpellTable[7]
+			return
+		end
 		self.CastSpell = self.SpellTable[2]
 		return
 	end
