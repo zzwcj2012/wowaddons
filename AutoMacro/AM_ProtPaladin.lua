@@ -11,6 +11,7 @@ function AM_ProtPaladin:Init()
 		[6] = GetSpellInfo(119072), --Holy Wrath
 		[7] = GetSpellInfo(53600), -- Shield of the Righteous
 		[8] = GetSpellInfo(20925), -- Sacred Shield
+		[9] = GetSpellInfo(24275), -- Hammar
 	}
 	self.HolyAvenger = GetSpellInfo(105809)
 	self.DivinePurpose = GetSpellInfo(90174)
@@ -18,6 +19,20 @@ function AM_ProtPaladin:Init()
 	self.Vengeance = GetSpellInfo(84839)
 
 	self:CreateActionButton()	
+end
+
+function AM_ProtPaladin:CreateFrame()
+	local frame = CreateFrame("Frame")
+	frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+	frame:SetScript("OnEvent", function(self, event,...)
+		local timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId = select(1, ...)
+		if eventType == "SWING_DAMAGE" and destName == UnitName("player") then
+			if UnitName("target") == sourceName and UnitIsUnit("targettarget","player") then
+				print(UnitAuraTime("player",self.Vengeance,true))
+				self.lastAttackTime = GetTime()
+			end
+		end
+	end) 
 end
 
 function AM_ProtPaladin:IsRequiredSpell(spell)
@@ -28,6 +43,14 @@ local function Cooldown(spell)
 	local CD,Dur = GetSpellCooldown(spell)
 	if CD > 0 then return CD + Dur - GetTime() end
 	return 0
+end
+
+local function CanShield()
+	local holyPower = UnitPower("player",SPELL_POWER_HOLY_POWER)
+	if Cooldown(AM_ProtPaladin.SpellTable[7]) < 0.2 then
+		return UnitAuraTime("player",AM_ProtPaladin.DivinePurpose) or (holyPower > 2)
+	end
+	return false
 end
 
 function AM_ProtPaladin:Request()
@@ -80,6 +103,11 @@ function AM_ProtPaladin:Request()
 	local shieldRemain = UnitAuraTime("player", self.SpellTable[8], true, 20925) or 0
 	if shieldRemain < 6 and IsUsableSpell(self.SpellTable[8]) then
 		self.CastSpell = self.SpellTable[8]
+		return
+	end
+	
+	if Cooldown(self.SpellTable[9]) < tolerance and UnitExists("target") and UnitHealthMax("target") > 0 and UnitHealth("target") / UnitHealthMax("target") < 0.2 and not self.AOE then
+		self.CastSpell = self.SpellTable[9]
 		return
 	end
 
