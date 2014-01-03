@@ -19,17 +19,19 @@ function AM_ProtPaladin:Init()
 	self.Vengeance = GetSpellInfo(84839)
 
 	self:CreateActionButton()	
+	self.lastAttackTime = GetTime()
 end
 
 function AM_ProtPaladin:CreateFrame()
 	local frame = CreateFrame("Frame")
+	local prot = self
+	local Vengeance = GetSpellInfo(84839)
 	frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	frame:SetScript("OnEvent", function(self, event,...)
 		local timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId = select(1, ...)
 		if eventType == "SWING_DAMAGE" and destName == UnitName("player") then
-			if UnitName("target") == sourceName and UnitIsUnit("targettarget","player") then
-				print(UnitAuraTime("player",self.Vengeance,true))
-				self.lastAttackTime = GetTime()
+			if UnitName("target") == sourceName then
+				prot.lastAttackTime = GetTime()
 			end
 		end
 	end) 
@@ -62,7 +64,12 @@ function AM_ProtPaladin:Request()
 	local holyPower = UnitPower("player",SPELL_POWER_HOLY_POWER)
 	local spellPower = UnitAuraTime("player",self.HolyAvenger) and 3 or 1
 	
-	if not shieldTime and vengeanceTime and vengeanceTime < 18.7 and vengeanceTime > 18 and holyPower > 2 then
+	if not shieldTime and CanShield() and GetTime() - self.lastAttackTime < 0.35 then
+		self.CastSpell = self.SpellTable[7]
+		return
+	end
+
+	if not shieldTime and vengeanceTime and vengeanceTime < 18.7 and vengeanceTime > 18.4 and holyPower > 2 then
 		self.CastSpell = self.SpellTable[7]
 		return
 	end
@@ -128,4 +135,4 @@ function AM_ProtPaladin:Request()
 end
 
 AM_ProtPaladin:Init()
-
+AM_ProtPaladin:CreateFrame()
