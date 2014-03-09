@@ -1,0 +1,6 @@
+## Title: BloodShield
+## Version: 1.0
+## Author: AK-48
+## Interface: 50200
+
+BloodShield.lua
