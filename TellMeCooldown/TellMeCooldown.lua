@@ -74,24 +74,31 @@ local function CreateFrameWithIcon(icon,x,y,w,h,frameType)
 	t:SetTexture(icon)
 	t:SetAllPoints(f)
 	f.texture=t
+	local text = f:CreateFontString(nil, "OVERLAY")
+	text:SetFont(STANDARD_TEXT_FONT, 15, "OUTLINE")
+	text:SetAllPoints(true)
+	text:Hide()
+	f.text = text
 	return f
 end
 
 
-function CreateCD(spell,x,y,w,h,o,additionalCriteriaString,s)
+function CreateCD(spell,x,y,w,h,o,additionalCriteriaString,s, sound)
 	local c,_,z=GetSpellInfo(spell)
 	local f = CreateFrameWithIcon(z,x,y,w,h)
 	f.s = s	
-	local criteriaString = "return IsSpellKnown(spell) and cd(c)<=cd(k)"
+	f.t = true
+	local criteriaString = "IsSpellKnown(spell) and cd(c)<=cd(k)"
 	if additionalCriteriaString then
 		criteriaString = criteriaString .. " and " .. additionalCriteriaString
 	end
-	local criteria = loadstring(criteriaString)
-	setfenv(criteria,{spell=spell, cd = cd, c=c, k=gcd, IsSpellKnown = IsSpellKnown, UnitHealth = UnitHealth, UnitHealthMax = UnitHealthMax, UnitIsEnemy = UnitIsEnemy})
+	local criteriaActual = "if " .. criteriaString .. " then if not f.t then f:Show() if sound then PlaySound(sound) end end f.t = true return true else f.t = nil f:Hide() return false end"
+	local criteria = loadstring(criteriaActual)
+	setfenv(criteria,{f = f,spell=spell, cd = cd, c=c, k=gcd, IsSpellKnown = IsSpellKnown, UnitHealth = UnitHealth, UnitHealthMax = UnitHealthMax, UnitIsEnemy = UnitIsEnemy, sound = sound, PlaySound = PlaySound})
 	Register(f,criteria,o)
 end
 
-function CreateBuff(spell,x,y,w,h,o,target,ismine,duration)
+function CreateBuff(spell,x,y,w,h,o,target,ismine,duration,sound)
 	local c,_,z = GetSpellInfo(spell)
 	local f
 	local filter = nil
@@ -102,37 +109,60 @@ function CreateBuff(spell,x,y,w,h,o,target,ismine,duration)
 		f = CreateFrameWithIcon(z,x,y,w,h)
 	end
 	if ismine then filter = "PLAYER" end
-	local criteriaString = "return UnitBuff(target,spell,filter)"
+	local criteriaString = "if UnitBuff(target,spell,filter) then if not f.t then f:Show() if sound then PlaySound(sound) end end f.t = true return true else f.t = nil f:Hide() return false end"
 	if duration then
 		--cooldownFrame = CreateFrame("Cooldown",nil ,UIParent)
 		--cooldownFrame:SetAllPoints(f)
 		f:SetReverse(false)
-		criteriaString = "if UnitBuff(target,spell,filter) then if not f.t then f:Show() f:SetCooldown(GetTime(), duration) end f.t = true return true else f.t = nil f:Hide() return false end"
+		criteriaString = "if UnitBuff(target,spell,filter) then if not f.t then f:Show() if sound then PlaySound(sound) end f:SetCooldown(GetTime(), duration) end f.t = true return true else f.t = nil f:Hide() return false end"
+		f:SetScript("OnUpdate", function(self, ...) 
+			local dur = select(7,UnitBuff(target,c,filter))
+			if dur then
+				f.text:SetFormattedText("%.1f", dur - GetTime())
+				f.text:Show()
+			else
+				f.text:Hide()
+			end
+		end)
 	end
 	f:SetAlpha(0)
 
 	local criteria = loadstring(criteriaString)
-	setfenv(criteria,{UnitBuff = UnitBuff, target = target, spell = c, filter = filter,f = f,duration = duration,GetTime = GetTime})
-	Register(f,criteria,o,{UNIT_AURA = "UNIT_AURA"})
+	setfenv(criteria,{UnitBuff = UnitBuff, target = target, spell = c, filter = filter,f = f,duration = duration,GetTime = GetTime, sound = sound, PlaySound = PlaySound})
+	Register(f,criteria,o, {UNIT_AURA = "UNIT_AURA"})
 end
 
 function CreateRapture(x,y,w,h,o)
+	local _, class = UnitClass("player")
+	if class ~= "PRIEST" then return end
 	local c,_,z = GetSpellInfo(17)
 	local f = CreateFrameWithIcon(z,x,y,w,h)
 	local eventFrame = CreateFrame("Frame")
+	local soundPlayed = true
 	eventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+	eventFrame.lastTime = 0
 	eventFrame:SetScript("OnEvent",function(self, event, ...)
 		local timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId = select(1, ...)
 		if eventType == "SPELL_ENERGIZE" then
 			local player_name = UnitName("player")
 			if destName == player_name and sourceName == player_name and spellId == 47755 then
 				self.lastTime = GetTime()
-				PlaySound("QUESTADDED")
+				soundPlayed = false
 			end
+		end
+		if GetTime() - self.lastTime > 12  and not soundPlayed then
+				soundPlayed =  true
+				PlaySound("QUESTADDED")
+		end
+		if GetTime() - self.lastTime < 12 then
+			f.text:SetFormattedText("%.1f", 12 - GetTime() + self.lastTime)
+			f.text:Show()
+		else
+			f.text:Hide()
 		end
 	end)
 	eventFrame.lastTime = 0
-	local criteriaString = "return (GetTime() - f.lastTime > 12) and GetSpecialization() == 1"
+	local criteriaString = "return GetSpecialization() == 1"
 	local criteria = loadstring(criteriaString)
 	setfenv(criteria,{f = eventFrame,GetTime = GetTime, GetSpecialization = GetSpecialization})
 	Register(f,criteria,o)
@@ -145,8 +175,9 @@ CreateCD(32379,0,0,128,128,0.5,[[IsSpellKnown(8092) and UnitHealth("target") > 0
 CreateBuff(31821,-160,-100,48,48,0.8,"player",nil) --Shadow Fiend
 CreateCD(10060,80,-120,48,48,0.5) --Power Infusion
 
-CreateBuff(137247,-190,-120,48,48,0.8,"player",nil, 4) --Lucidity
+CreateBuff(137247,-190,-120,48,48,0.8,"player",nil, 4, "AuctionWindowOpen") --Lucidity
 
-CreateCD(34433,-170,-140,48,48,0.5) --Shadow Fiend
+CreateCD(34433,-170,-140,48,48,0.5,nil,nil,"AuctionWindowClose") --Shadow Fiend
 CreateRapture(-150,-120,48,48,0.5)
-
+CreateBuff(48517,-150,-120,48,48,0.8,"player",nil)
+CreateBuff(48518,-150,-120,48,48,0.8,"player",nil) 
