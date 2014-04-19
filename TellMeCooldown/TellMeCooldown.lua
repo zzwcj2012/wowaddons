@@ -82,6 +82,16 @@ local function CreateFrameWithIcon(icon,x,y,w,h,frameType)
 	return f
 end
 
+local function loadStringFast(string,fenv)
+	local actualString = ""
+	for k,v in pairs(fenv) do
+		actualString = actualString .. "local " ..  k .. " = " .. k .. " " 
+	end
+	actualString = actualString .. "return function() " .. string .. " end"
+	local f = loadstring(actualString)
+	setfenv(f,fenv)
+	return f()
+end
 
 function CreateCD(spell,x,y,w,h,o,additionalCriteriaString,s, sound)
 	local c,_,z=GetSpellInfo(spell)
@@ -93,8 +103,7 @@ function CreateCD(spell,x,y,w,h,o,additionalCriteriaString,s, sound)
 		criteriaString = criteriaString .. " and " .. additionalCriteriaString
 	end
 	local criteriaActual = "if " .. criteriaString .. " then if not f.t then f:Show() if sound then PlaySound(sound) end end f.t = true return true else f.t = nil f:Hide() return false end"
-	local criteria = loadstring(criteriaActual)
-	setfenv(criteria,{f = f,spell=spell, cd = cd, c=c, k=gcd, IsSpellKnown = IsSpellKnown, UnitHealth = UnitHealth, UnitHealthMax = UnitHealthMax, UnitIsEnemy = UnitIsEnemy, sound = sound, PlaySound = PlaySound})
+	local criteria = loadStringFast(criteriaActual, {f = f,spell=spell, cd = cd, c=c, k=gcd, IsSpellKnown = IsSpellKnown, UnitHealth = UnitHealth, UnitHealthMax = UnitHealthMax, UnitIsEnemy = UnitIsEnemy, sound = sound, PlaySound = PlaySound})
 	Register(f,criteria,o)
 end
 
@@ -127,8 +136,7 @@ function CreateBuff(spell,x,y,w,h,o,target,ismine,duration,sound)
 	end
 	f:SetAlpha(0)
 
-	local criteria = loadstring(criteriaString)
-	setfenv(criteria,{UnitBuff = UnitBuff, target = target, spell = c, filter = filter,f = f,duration = duration,GetTime = GetTime, sound = sound, PlaySound = PlaySound})
+	local criteria = loadStringFast(criteriaString, {UnitBuff = UnitBuff, target = target, spell = c, filter = filter,f = f,duration = duration,GetTime = GetTime, sound = sound, PlaySound = PlaySound})
 	Register(f,criteria,o, {UNIT_AURA = "UNIT_AURA"})
 end
 
@@ -163,8 +171,7 @@ function CreateRapture(x,y,w,h,o)
 	end)
 	eventFrame.lastTime = 0
 	local criteriaString = "return GetSpecialization() == 1"
-	local criteria = loadstring(criteriaString)
-	setfenv(criteria,{f = eventFrame,GetTime = GetTime, GetSpecialization = GetSpecialization})
+	local criteria = loadStringFast(criteriaString, {f = eventFrame,GetTime = GetTime, GetSpecialization = GetSpecialization})
 	Register(f,criteria,o)
 end
 
