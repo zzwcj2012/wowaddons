@@ -70,6 +70,7 @@ local select = select
 local pairs = pairs
 local wipe = wipe
 local tostring = tostring
+local abs = math.abs
 
 local WorldMapFrame = WorldMapFrame
 
@@ -161,7 +162,7 @@ local function UpdateMapData(map, floor, w, h)
 	map_height = h
 
 	if w == 0 and h == 0 then
-		print("No map data available, status will be disabled. Installing the latest version of LibMapData-1.0 may fix this problem.")
+		--print("No map data available, status will be disabled. Installing the latest version of LibMapData-1.0 may fix this problem.")
 	end
 end
 
@@ -273,6 +274,9 @@ local function GetPohTargets()
 	local k,unitId
 	local bestUnit,bestHealing
 	local oldHealing
+	local unitHealed
+	local bestUnitHealed
+	local oldUnitHealed
 	for i=0,4 do
 		for k,unitId in pairs(groups[i]) do
 			if unitData[unitId] then
@@ -280,10 +284,14 @@ local function GetPohTargets()
 				unitData[unitId].POHEffective = effectiveHeal
 			end
 		end
+		bestUnitHealed = 0
 		bestUnit = nil
 		bestHealing = 0
+		oldHealing = nil
+		oldUnitHealed = nil
 		for k,unitId in pairs(groups[i]) do
 			healingAmount = 0
+			unitHealed = 0
 			if unitData[unitId] then
 				local x,y = unitData[unitId].x,unitData[unitId].y
 				for _,unitId2 in pairs(groups[i]) do
@@ -291,27 +299,32 @@ local function GetPohTargets()
 						local dist = DistanceSq(x,y,unitData[unitId2].x,unitData[unitId2].y)
 						if dist < spell.Range then 
 							healingAmount = healingAmount + unitData[unitId2].POHEffective
+							unitHealed = unitHealed + 1
 						end
 					end
 				end
 				if healingAmount > bestHealing and IsUnitInRange(unitId) then
 					bestHealing = healingAmount
 					bestUnit = unitId
+					bestUnitHealed = unitHealed
 				end
 				if oldPohTarget[i].unitId and unitId == oldPohTarget[i].unitId then
 					oldHealing = healingAmount
+					oldUnitHealed = unitHealed
 				end
 			end
 		end
 		if bestUnit then 
 			if oldPohTarget[i].unitId and IsUnitInRange(oldPohTarget[i].unitId) and 
-			(bestHealing / averagePohHeal - oldPohTarget[i].healing / averagePohHeal) < diffThreshold then
+			abs(bestHealing / averagePohHeal - oldPohTarget[i].healing / averagePohHeal) < diffThreshold then
 				bestUnit =  oldPohTarget[i].unitId 
 				bestHealing = oldHealing or oldPohTarget[i].healing
+				bestUnitHealed = oldUnitHealed or oldPohTarget[i].unitHealed
 			end
 			oldPohTarget[i].unitId  = bestUnit
 			oldPohTarget[i].healing = bestHealing
-			targets[bestUnit] = bestHealing / averagePohHeal
+			oldPohTarget[i].unitHealed = bestUnitHealed
+			targets[bestUnit] = { amount = bestHealing / averagePohHeal, unitHealed = bestUnitHealed }
 		end
 	end
 	return targets
@@ -402,17 +415,24 @@ local unitFrameTable = {}
 local frameIconTable = {}
 
 
-local function CreateIcon(parent,icon,x)
+local function CreateIcon(parent,icon,x,withText)
 	local f
 	f=CreateFrame("Frame",nil,parent) 
-	f:SetWidth(16)
-	f:SetHeight(16)
-	f:SetPoint("TOP",x,3,"TOP")
+	f:SetWidth(20)
+	f:SetHeight(20)
+	f:SetPoint("TOP",x,5,"TOP")
 	local t = f:CreateTexture()
 	t:SetTexture(icon)
 	t:SetAllPoints(f)
 	f.texture=t
 	f:Hide()
+	if withText then
+		local text = f:CreateFontString(nil, "OVERLAY")
+		text:SetFont(STANDARD_TEXT_FONT, 10, "OUTLINE")
+		text:SetAllPoints(true)
+		text:Hide()
+		f.text = text
+	end
 	return f
 end
 
@@ -422,7 +442,7 @@ local function ShowIcon(unit,poh,o)
 		if not frameIconTable[frame] then
 			frameIconTable[frame] = {
 				CoHIcon = CreateIcon(frame,Spells.CoH.Icon,0),
-				PoHIcon = CreateIcon(frame,Spells.PoH.Icon,25),
+				PoHIcon = CreateIcon(frame,Spells.PoH.Icon,25, true),
 				DAIcon = CreateIcon(frame,Spells.DivineAegis.Icon,-25),
 			}
 		end
@@ -431,6 +451,8 @@ local function ShowIcon(unit,poh,o)
 	end
 	if poh then 
 		frame = frameIconTable[frame].PoHIcon 
+		frame.text:SetFormattedText("%d", poh)
+		frame.text:Show()
 	else
 		frame = frameIconTable[frame].CoHIcon 
 	end
@@ -470,8 +492,8 @@ local function Update()
 	local o
 	local PoHTargets = GetPohTargets()
 	for k,v in pairs(PoHTargets) do
-		o = math_min(1.0,v + 0.2)
-		ShowIcon(k,1,o)
+		o = math_min(1.0,v.amount + 0.2)
+		ShowIcon(k,v.unitHealed,o)
 	end
 	if GetSpecialization() == 2 and CoHCooldown() then
 		local CoHTarget
