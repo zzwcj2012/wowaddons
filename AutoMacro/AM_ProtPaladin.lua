@@ -20,6 +20,8 @@ function AM_ProtPaladin:Init()
 
 	self:CreateActionButton()	
 	self.lastAttackTime = GetTime()
+	self.preserve = false
+	self.stuck = false
 end
 
 function AM_ProtPaladin:CreateFrame()
@@ -28,9 +30,13 @@ function AM_ProtPaladin:CreateFrame()
 	local Vengeance = GetSpellInfo(84839)
 	frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	frame:SetScript("OnEvent", function(self, event,...)
-		local timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId = select(1, ...)
-		if eventType == "SWING_DAMAGE" and destName == UnitName("player") then
-			if UnitName("target") == sourceName then
+		local timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, arg1, arg2, arg3 = select(1, ...)
+		local shieldTime = UnitAuraTime("player",prot.SpellTable[7])
+		if not shieldTime and UnitName("target") == sourceName and destName == UnitName("player") and sourceName ~= prot.blackList then
+			if eventType == "SWING_DAMAGE" then
+				prot.lastAttackTime = GetTime()
+			end
+			if eventType == "SWING_MISSED"  and arg1 == "ABSORB" and arg3 > 100000 then 
 				prot.lastAttackTime = GetTime()
 			end
 		end
@@ -47,12 +53,17 @@ local function Cooldown(spell)
 	return 0
 end
 
-local function CanShield()
+function CanShield()
 	local holyPower = UnitPower("player",SPELL_POWER_HOLY_POWER)
 	if Cooldown(AM_ProtPaladin.SpellTable[7]) < 0.2 then
 		return UnitAuraTime("player",AM_ProtPaladin.DivinePurpose) or (holyPower > 2)
 	end
 	return false
+end
+
+local function HaveSacredShield()
+	local _,_,_,_,selected = GetTalentInfo(9)
+	return selected
 end
 
 function AM_ProtPaladin:Request()
@@ -66,20 +77,21 @@ function AM_ProtPaladin:Request()
 	
 	if not shieldTime and CanShield() and GetTime() - self.lastAttackTime < 0.35 then
 		self.CastSpell = self.SpellTable[7]
+		self.stuck = false
 		return
 	end
 
-	if not shieldTime and vengeanceTime and vengeanceTime < 18.7 and vengeanceTime > 18.4 and holyPower > 2 then
-		self.CastSpell = self.SpellTable[7]
-		return
-	end
+	--if not shieldTime and vengeanceTime and vengeanceTime < 18.7 and vengeanceTime > 18.4 and holyPower > 2 then
+		--self.CastSpell = self.SpellTable[7]
+		--return
+	--end
 	
 	local tolerance = 0.2
 	local crusaderStrikeSpell = self.AOE and self.SpellTable[5] or self.SpellTable[1]
 	local crusaderStrikeCD = Cooldown(crusaderStrikeSpell)
 	local judgementCD = Cooldown(self.SpellTable[2])
-	if UnitAuraTime("player",self.GrandCrusader) then
-		if holyPower + spellPower > 5 then
+	if UnitAuraTime("player",self.GrandCrusader) and not self.preserve then
+		if holyPower + spellPower > 5 and not self.stuck then
 			self.CastSpell = self.SpellTable[7]
 			return
 		end
@@ -87,7 +99,7 @@ function AM_ProtPaladin:Request()
 		return
 	end
 	if crusaderStrikeCD < tolerance then
-		if holyPower + spellPower > 5 then
+		if holyPower + spellPower > 5 and not self.stuck then
 			self.CastSpell = self.SpellTable[7]
 			return
 		end
@@ -95,22 +107,24 @@ function AM_ProtPaladin:Request()
 		return
 	end
 	if judgementCD < tolerance then
-		if holyPower + spellPower > 5 then
+		if holyPower + spellPower > 5 and not self.stuck then
 			self.CastSpell = self.SpellTable[7]
 			return
 		end
 		self.CastSpell = self.SpellTable[2]
 		return
 	end
-	if UnitAuraTime("player",self.DivinePurpose) and Cooldown(self.SpellTable[7]) == 0 then
+	if UnitAuraTime("player",self.DivinePurpose) and Cooldown(self.SpellTable[7]) == 0 and not self.stuck then
 		self.CastSpell = self.SpellTable[7]
 		return
 	end
 
-	local shieldRemain = UnitAuraTime("player", self.SpellTable[8], true, 20925) or 0
-	if shieldRemain < 6 and IsUsableSpell(self.SpellTable[8]) then
-		self.CastSpell = self.SpellTable[8]
-		return
+	if HaveSacredShield() then
+		local shieldRemain = UnitAuraTime("player", self.SpellTable[8], true, 20925) or 0
+		if shieldRemain < 6 and IsUsableSpell(self.SpellTable[8]) then
+			self.CastSpell = self.SpellTable[8]
+			return
+		end
 	end
 	
 	if Cooldown(self.SpellTable[9]) < tolerance and UnitExists("target") and UnitHealthMax("target") > 0 and UnitHealth("target") / UnitHealthMax("target") < 0.2 and not self.AOE then
@@ -118,7 +132,7 @@ function AM_ProtPaladin:Request()
 		return
 	end
 
-	if Cooldown(self.SpellTable[3]) < tolerance then
+	if Cooldown(self.SpellTable[3]) < tolerance and not self.preserve then
 		self.CastSpell = self.SpellTable[3]
 		return
 	end
