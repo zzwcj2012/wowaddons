@@ -126,4 +126,46 @@ function AutoSelDisc_IsUnit2(u)
 	if UnitIsUnit(u,lastunit2) then return true else return false end
 end
 
+
+local lastsel_poh
+
+function AutoSelPoh()
+	if not BlzPriestAoeAPI then
+		lastsel_poh = "target"
+		return lastsel_poh
+	end
+	local PoHTargets = BlzPriestAoeAPI.GetPohTargets()
+	if not IsInRaid() then
+		for k,v in pairs(PoHTargets) do
+			lastsel_poh = k
+			return k
+		end
+	else
+		local _,target_party, dest_party
+		for i=1,25 do
+			local unit = "raid" .. i
+			if UnitExists(unit) and UnitIsUnit("target",unit) then
+				_, _, target_party = GetRaidRosterInfo(i)
+				break
+			end
+		end
+		for k,v in pairs(PoHTargets) do
+			local unitIndex = tonumber(string.match(k,"raid(%d+)"))
+			_, _, dest_party = GetRaidRosterInfo(unitIndex)
+			if target_party == dest_party then
+				lastsel_poh = k
+				return k
+			end
+		end
+		lastsel_poh = "target"
+		return lastsel_poh
+	end
+	
+end
+
+function AutoSelPoh_IsUnit(u)
+	if UnitIsUnit(u,lastsel_poh) then return true else return false end
+end
+
+
 AM_AutoSel_Init()
