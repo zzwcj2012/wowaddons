@@ -1,16 +1,8 @@
----作者 AK-48 <ak48disk@gmail.com>
----一区 奥达曼 梦雨落风
+---脳梅脮脽 AK-48 <ak48disk@gmail.com>
+---脪禄脟酶 掳脗麓茂脗眉 脙脦脫锚脗盲路莽
 
 local function CreateVengeanceBug(BSTStateProvider)
 
----改大小和位置改这里
----前两个数字代表位置 数字越大 图标越靠近 右上 可以为负数
----后两个数字代表大小
-local x,y,w,h = 40,40,64,64
----
---- 如果不要点击按钮 删掉下面这行即可
-local enableButton = true
----
 
 local _,class = UnitClass("player")
 if class ~= "PALADIN" then return end
@@ -76,27 +68,6 @@ local function CanShield()
 end
 
 local executors, stateProvider = {}
-
-if enableButton then
-	local buttonFrame, overlayFrame
-	
-	buttonFrame = CreateFrameWithIcon(icon,x,y,w,h,"Button","SecureActionButtonTemplate")
-	buttonFrame:SetAttribute("type","macro")
-	buttonFrame:SetAttribute("macrotext","/cast " .. name)
-
-	overlayFrame = CreateFrameWithIcon(VengeanceIcon,x,y,w,h)
-	overlayFrame:SetScript("OnMouseDown", function() end)
-	overlayFrame:SetFrameStrata("TOOLTIP")
-	
-	local clickExecutor = function(state)
-		if state then
-			overlayFrame:Hide()
-		else
-			overlayFrame:Show()
-		end
-	end
-	table.insert(executors,clickExecutor)
-end
 
 local function createCombatLogProvider()
 	local lastSwingTime = 0
@@ -265,7 +236,7 @@ stateProvider = createCombatLogProvider()
 local updateFrame = CreateFrame("Frame")
 updateFrame:SetScript("OnUpdate", function()
 	local state
-	if BSTStateProvider and BSTStateProvider.enabled then
+	if BSTStateProvider and BSTStateProvider.enabled() then
 		state = BSTStateProvider.state()
 	else
 		state = stateProvider()
@@ -278,9 +249,10 @@ end)
 
 end
 
---TODO: Add BST Support
 --To add BST support must implement BSTStateProvider
--- attribute BSTStateProvider.enabled (true/false) 
+-- function BSTStateProvider.enabled() (true/false) 
 -- function BSTStateProvider.state() give state, true if SoR can be cast
 --BSTStateProvider should be the first parameter of CreateVengeanceBug
-CreateVengeanceBug({})
+CreateVengeanceBug(BSTStateProvider)
+
+
