@@ -1,19 +1,25 @@
+---作者 AK-48 <ak48disk@gmail.com>
+---一区 奥达曼 梦雨落风
 
 if not BossSwingTimer then return end
+
+local BossSwingTimer = BossSwingTimer
+
+BSTStateProvider = {
+	enabled = function() return false end
+}
 
 local defaults = {
 	profile = {
 		enableBST = false,
 		swingTimeOffset = 50,
-		swingTimeRange = 350,
+		swingTimeRange = 150,
 	},
 }
 
 local addon = LibStub("AceAddon-3.0"):NewAddon("VengeanceBug", "AceConsole-3.0")
 
 function addon:GetOptions()
-	if not BossSwingTimer then
-	end
 	self.Options = self.Options or {
 		type = "group",
 		name = "VengeanceBug卡复仇",
@@ -62,13 +68,20 @@ function addon:GetOptions()
 	return self.Options
 end
 
-local function CreateBSTStateProvider(db)
+function addon:CreateBSTStateProvider()
 	local swings = BossSwingTimer.swings
-	return {
-		enabled = function ()
-			return db.enableBST
-		end,
-		state = function ()
+	local db = self.db.profile
+	local updatedIndicator = false
+	
+	BSTStateProvider.enabled = function ()
+		return db.enableBST
+	end
+	
+	BSTStateProvider.state = function ()
+		if not updatedIndicator then
+			updatedIndicator = self:UpdateBSTRangeIndicator()
+		end
+		if UnitExists("target") then
 			local guid  = UnitGUID("target")
 			local swing = swings[guid]
 			local time, readyTime = GetTime()
@@ -76,30 +89,43 @@ local function CreateBSTStateProvider(db)
 			if db.swingTimeOffset < 0 then
 				readyTime = swing.time - db.swingTimeOffset / 1000.0
 			else
+				if not swing.next then return false end
 				readyTime = swing.next - db.swingTimeOffset / 1000.0
+				if time < readyTime and db.swingTimeOffset < db.swingTimeRange then
+					readyTime = swing.time - db.swingTimeOffset / 1000.0
+				end
 			end
 			return time >= readyTime and time < readyTime + db.swingTimeRange / 1000.0
-		end,
-	}
+		end
+	end
 end
 
-local BSTRangeIndicatorFactory = function(self)
-	if not self.bar.range then
-		self.bar.range = self.bar:CreateTexture(nil, "BACKGROUND")
-		self.bar.reage:SetPoint("TOPLEFT", self.bar, "TOPLEFT", 0, 0)
-		self.bar.range:SetPoint("BOTTOMLEFT", self.bar, "BOTTOMLEFT", 0, 0)
+function addon:UpdateBSTRangeIndicator()
+	if not BossSwingTimer.bar then return false end
+	if not BossSwingTimer.bar.range then
+		BossSwingTimer.bar.range = BossSwingTimer.bar:CreateTexture(nil, "OVERLAY")
+		BossSwingTimer.bar.range:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
+		BossSwingTimer.bar.range:SetPoint("TOPRIGHT", BossSwingTimer.bar, "TOPLEFT", 0, 0)
+		BossSwingTimer.bar.range:SetPoint("BOTTOMRIGHT", BossSwingTimer.bar, "BOTTOMLEFT", 0, 0)
+		BossSwingTimer.bar.range:SetWidth(1)
+		BossSwingTimer.bar.range:SetHeight(BossSwingTimer.db.profile.frame.height)
+		BossSwingTimer.bar.range:SetVertexColor(0.0, 0.6, 0.0)
+		BossSwingTimer.bar.range:SetAlpha(BossSwingTimer.db.profile.frame.alpha * 0.3)
 	end
-	self.bar.range:SetWidth(1)
-	self.bar.range:SetVertexColor(0.0, 0.6, 0.0)
-	self.bar.range:SetAlpha(self.db.profile.frame.alpha)
-	return function (self)
-		local db = self.db
-		local offset = db.swingTimeOffset / 1000 / self.db.profile.frame.length * self.db.profile.frame.width
-		local length = db.swingTimeRange / 1000 / self.db.profile.frame.length * self.db.profile.frame.width
-		self.bar.reage:SetPoint("TOPLEFT", self.bar, "TOPLEFT", offset, 0)
-		self.bar.range:SetPoint("BOTTOMLEFT", self.bar, "BOTTOMLEFT", offset, 0)
-		self.bar.range:SetWidth(length)
+	
+	local db = self.db.profile
+	local offset = db.swingTimeOffset / 1000.0 / BossSwingTimer.db.profile.frame.length * BossSwingTimer.db.profile.frame.width
+	local length = db.swingTimeRange / 1000.0 / BossSwingTimer.db.profile.frame.length * BossSwingTimer.db.profile.frame.width
+	BossSwingTimer.bar.range:ClearAllPoints()
+	BossSwingTimer.bar.range:SetPoint("TOPRIGHT", BossSwingTimer.bar, "TOPLEFT", offset, 0)
+	BossSwingTimer.bar.range:SetPoint("BOTTOMRIGHT", BossSwingTimer.bar, "BOTTOMLEFT", offset, 0)
+	BossSwingTimer.bar.range:SetWidth(length)
+	if length == 0 then 
+		BossSwingTimer.bar.range:Hide()
+	else
+		BossSwingTimer.bar.range:Show()
 	end
+	return true
 end
 
 function addon:OnInitialize()
@@ -108,8 +134,7 @@ function addon:OnInitialize()
 	LibStub("AceConfig-3.0"):RegisterOptionsTable("VengeanceBug", self:GetOptions())
 	LibStub("AceConfigDialog-3.0"):AddToBlizOptions("VengeanceBug", "VengeanceBug卡复仇")
 
-	self.UpdateBSTRangeIndicator = BSTRangeIndicatorFactory(BossSwingTimer)
 	self:UpdateBSTRangeIndicator()
 
-	BSTStateProvider = CreateBSTStateProvider(self.db)
+	self:CreateBSTStateProvider()
 end

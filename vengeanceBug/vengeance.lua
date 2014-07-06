@@ -1,5 +1,5 @@
----×÷Õß AK-48 <ak48disk@gmail.com>
----Ò»Çø °Â´ïÂü ÃÎÓêÂä·ç
+---作者 AK-48 <ak48disk@gmail.com>
+---一区 奥达曼 梦雨落风
 
 local function CreateVengeanceBug(BSTStateProvider)
 
@@ -91,7 +91,7 @@ local function createCombatLogProvider()
 	end) 
 	return function()
 		local shieldTime = UnitAuraTime("player",name)
-		if not shieldTime and CanShield() and GetTime() - lastSwingTime < 0.35 then
+		if not shieldTime and GetTime() - lastSwingTime < 0.35 then
 			return true
 		else
 			return false
@@ -235,11 +235,13 @@ stateProvider = createCombatLogProvider()
 
 local updateFrame = CreateFrame("Frame")
 updateFrame:SetScript("OnUpdate", function()
-	local state
-	if BSTStateProvider and BSTStateProvider.enabled() then
-		state = BSTStateProvider.state()
-	else
-		state = stateProvider()
+	local state = CanShield()
+	if state then
+		if BSTStateProvider and BSTStateProvider.enabled() then
+			state = BSTStateProvider.state()
+		else
+			state = stateProvider()
+		end
 	end
 	
 	for _, executor in pairs(executors) do

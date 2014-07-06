@@ -2,6 +2,7 @@
 ## Title: vengeanceBug
 ## Version: 0.3
 ## Author: AK-48
+## SavedVariables: VengeanceBugDB
 
 BST.lua
 
