@@ -55,7 +55,7 @@ local Vengeance, _, VengeanceIcon = GetSpellInfo(84839)
 
 local function Cooldown(spell)
 	local CD,Dur = GetSpellCooldown(spell)
-	if CD > 0 then return CD + Dur - GetTime() end
+	if CD and CD > 0 then return CD + Dur - GetTime() end
 	return 0
 end
 
