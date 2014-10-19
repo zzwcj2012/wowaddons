@@ -1,7 +1,11 @@
 local size
 local energy
 if select(2,UnitClass("player")) == "PRIEST" then
-	size = 3
+	if UnitLevel("player") > 90 then
+		size = 5
+	else
+		size = 3
+	end
 	energy = SPELL_POWER_SHADOW_ORBS
 elseif  select(2,UnitClass("player")) == "PALADIN" then
 	size = 5

@@ -29,8 +29,8 @@ function AM_ProtPaladin:CreateFrame()
 	local prot = self
 	local Vengeance = GetSpellInfo(84839)
 	frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-	frame:SetScript("OnEvent", function(self, event,...)
-		local timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, arg1, arg2, arg3 = select(1, ...)
+	frame:SetScript("OnEvent", --[[function(self, event,...)
+		local timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, arg1, arg2, arg3, arg4, arg5, arg6 = select(1, ...)
 		local shieldTime = UnitAuraTime("player",prot.SpellTable[7])
 		if not shieldTime and UnitName("target") == sourceName and destName == UnitName("player") and sourceName ~= prot.blackList then
 			if eventType == "SWING_DAMAGE" then
@@ -39,8 +39,14 @@ function AM_ProtPaladin:CreateFrame()
 			if eventType == "SWING_MISSED"  and arg1 == "ABSORB" and arg3 > 100000 then 
 				prot.lastAttackTime = GetTime()
 			end
+			if eventType == "SPELL_DAMAGE" and arg6 == 1 and arg4 > 200000 then
+				if not prot.disableSpell then
+					prot.lastAttackTime = GetTime()
+					print(1)
+				end
+			end
 		end
-	end) 
+	end]]nil) 
 end
 
 function AM_ProtPaladin:IsRequiredSpell(spell)
@@ -75,10 +81,11 @@ function AM_ProtPaladin:Request()
 	local holyPower = UnitPower("player",SPELL_POWER_HOLY_POWER)
 	local spellPower = UnitAuraTime("player",self.HolyAvenger) and 3 or 1
 	
-	if not shieldTime and CanShield() and GetTime() - self.lastAttackTime < 0.35 then
+	if not shieldTime and CanShield() and BSTStateProvider.state() then
+		if UnitName("target") ~= "Rik'kal the Dissector" then
 		self.CastSpell = self.SpellTable[7]
 		self.stuck = false
-		return
+		return end
 	end
 
 	--if not shieldTime and vengeanceTime and vengeanceTime < 18.7 and vengeanceTime > 18.4 and holyPower > 2 then
@@ -118,7 +125,7 @@ function AM_ProtPaladin:Request()
 		self.CastSpell = self.SpellTable[7]
 		return
 	end
-
+--[[
 	if HaveSacredShield() then
 		local shieldRemain = UnitAuraTime("player", self.SpellTable[8], true, 20925) or 0
 		if shieldRemain < 6 and IsUsableSpell(self.SpellTable[8]) then
@@ -126,7 +133,7 @@ function AM_ProtPaladin:Request()
 			return
 		end
 	end
-	
+	]]
 	if Cooldown(self.SpellTable[9]) < tolerance and UnitExists("target") and UnitHealthMax("target") > 0 and UnitHealth("target") / UnitHealthMax("target") < 0.2 and not self.AOE then
 		self.CastSpell = self.SpellTable[9]
 		return
@@ -138,6 +145,10 @@ function AM_ProtPaladin:Request()
 	end
 	 	
 	if Cooldown(self.SpellTable[6]) < tolerance then
+		if UnitExists("target") and UnitName("target") == "Embodied Doubt" then 
+			self.CastSpell = self.SpellTable[4]
+			return
+		end
 		self.CastSpell = self.SpellTable[6]
 		return
 	end

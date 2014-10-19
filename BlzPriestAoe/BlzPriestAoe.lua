@@ -10,16 +10,16 @@ local Spells = {
 	CoH = {
 		SpellId = 34861,
 		SpellName = GetSpellInfo(34861),
-		Base = (4599 + 5082) / 2,
-		Coff = 0.467,
+		Base = 0,
+		Coff = 2.216,
 		Range = 30 ^ 2,
 		Icon = "Interface\\Icons\\Spell_Holy_CircleOfRenewal",
 	},
 	PoH = {
 		SpellId = 596,
 		SpellName = GetSpellInfo(596),
-		Base = (6766 + 7148) / 2,
-		Coff = 0.671,
+		Base = 0,
+		Coff = 2.216,
 		Range = 30 ^ 2,
 		Icon = "Interface\\Icons\\Spell_Holy_PrayerOfHealing02",
 	},
@@ -37,10 +37,13 @@ local Spells = {
 	},
 }
 
+local DiscIncrement = 1.3
+local HolyIncrement = 1.1
+		
+
 local HealingIncrements = {
 	[123254] = 0.15, --Twist of fate
-	[109147] = 0.25, --Archangel
-	[81206] = 0.25, --Chakara
+	[81700] = 0.25, --Archangel
 	[144364] = 0.15, --Power of the titans
 }
 
@@ -195,16 +198,17 @@ local function GetHealingAmount(spell,unit)
 	local mastery = GetMasteryEffect() / 100.0
 	local e,o = 0,0
 	if GetSpecialization() == 1 then --Disc
-		avgAmount = avgAmount * (1 + mastery / 2)
+		avgAmount = avgAmount * (1 + mastery / 2) * DiscIncrement
 		e = math_min(slot,avgAmount)
 		o = avgAmount - e
 		e = e + avgAmount * critChance * (1 + mastery)
 		if UnitBuff("player",Spells.SpiritShell.SpellName) then 
-			e = avgAmount * ( 1 + critChance * ( 1 + mastery) )
+			e = avgAmount * ( 1 + (critChance + 0.1) * ( 1 + mastery) )
 			o = 0
 		end
 		return e,o
 	elseif GetSpecialization() == 2 then --Holy
+		avgAmount = avgAmount * HolyIncrement
 		e = math_min(slot,avgAmount)
 		o = avgAmount - e
 		return e,o 
@@ -242,7 +246,7 @@ local function RefreshPlayerData()
 	playerHealingIncrement = 0
 	for k,v in pairs(HealingIncrements) do
 		local spellName = GetSpellInfo(k)
-		if UnitBuff("player",spellName) then
+		if spellName and UnitBuff("player",spellName) then
 			playerHealingIncrement = (1 + playerHealingIncrement) * (1 + v) - 1
 		end
 	end

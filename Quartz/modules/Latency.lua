@@ -107,37 +107,31 @@ end
 
 local channelingTicks = {
 	-- warlock
-	[GetSpellInfo(1120)] = 6, -- drain soul
 	[GetSpellInfo(689)] = 6, -- drain life
 	[GetSpellInfo(103103)] = 4, -- Malefic Grasp
 	[GetSpellInfo(5740)] = 6, -- rain of fire
-	[GetSpellInfo(108371)] = 6, -- harvest life
 	-- druid
 	[GetSpellInfo(740)] = 4, -- Tranquility
 	[GetSpellInfo(16914)] = 10, -- Hurricane
 	[GetSpellInfo(106996)] = 10, -- Astral Storm
 	-- priest
 	[GetSpellInfo(15407)] = 3, -- mind flay
-	[GetSpellInfo(129197)] = 3, -- mind flay(i)
+	[GetSpellInfo(129197)] = 3, -- mind flay: insanity
 	[GetSpellInfo(48045)] = 5, -- mind sear
 	[GetSpellInfo(47540)] = 2, -- penance
 	[GetSpellInfo(64843)] = 4, -- Devine Hymn
-	[GetSpellInfo(64904)] = 4, -- Hymn of hope
-	
 	-- mage
 	[GetSpellInfo(5143)] = 5, -- arcane missiles
 	[GetSpellInfo(10)] = 8, -- blizzard
 	[GetSpellInfo(12051)] = 3, -- evocation
-
 	-- monk
 	[GetSpellInfo(125953)] = 9, -- soothing mist
-	[GetSpellInfo(117952)] = 6, -- crackling jade lightning
+	[GetSpellInfo(117952)] = 4, -- crackling jade lightning
 }
 
 local channelingTimeGCDs = {
 	[GetSpellInfo(15407)] = 2, -- mind flay
 	[GetSpellInfo(48045)] = 5/1.5, -- mind sear
-	[GetSpellInfo(1120)] = 12/1.5, -- drain soul
 	[GetSpellInfo(689)] = 6/1.5, -- drain life
 	[GetSpellInfo(108371)] = 6/1.5, -- harvest life
 	[GetSpellInfo(103103)] = 4/1.5, -- Malefic Grasp
@@ -297,7 +291,7 @@ function Latency:UNIT_SPELLCAST_START(object, bar, unit)
 	local spell = UnitChannelInfo("player")
 
 	if spell and channelingTimeGCDs[spell] then
-		bar.channelTime = channelingTimeGCDs[spell] * select(7,GetSpellInfo(34914)) --Vampiric Touch
+		bar.channelTime = channelingTimeGCDs[spell] * select(4,GetSpellInfo(34914)) --Vampiric Touch
 	else
 		bar.channelTime = nil
 	end

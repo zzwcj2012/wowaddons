@@ -191,10 +191,9 @@ end
 
 local channelingTicks = {
 	-- warlock
-	[GetSpellInfo(1120)] = 6, -- drain soul
 	[GetSpellInfo(689)] = 6, -- drain life
-	[GetSpellInfo(103103)] = 4, -- malefic grasp
-	[GetSpellInfo(108371)] = 6, -- harvest life
+	[GetSpellInfo(103103)] = 4, -- drain soul
+	[GetSpellInfo(5740)] = 6, -- rain of fire
 	-- druid
 	[GetSpellInfo(740)] = 4, -- Tranquility
 	[GetSpellInfo(16914)] = 10, -- Hurricane
@@ -210,7 +209,7 @@ local channelingTicks = {
 	[GetSpellInfo(12051)] = 3, -- evocation
 	-- monk
 	[GetSpellInfo(125953)] = 9, -- soothing mist
-	[GetSpellInfo(117952)] = 6, -- crackling jade lightning
+	[GetSpellInfo(117952)] = 4, -- crackling jade lightning
 }
 
 local function getChannelingTicks(spell)
@@ -222,12 +221,19 @@ local function getChannelingTicks(spell)
 end
 --]]
 
+local mindBlast = GetSpellInfo(8092)
+
 function Player:UNIT_SPELLCAST_START(bar, unit)
 	if bar.channeling then
 		local spell = UnitChannelInfo(unit)
 		bar.channelingTicks = getChannelingTicks(spell)
 		setBarTicks(bar.channelingTicks)
 	else
+		local s = UnitCastingInfo(unit)
+		local shadowOrbs = UnitPower("player", SPELL_POWER_SHADOW_ORBS) or 0
+		if s == mindBlast and shadowOrbs == 2 then
+			
+		end
 		setBarTicks(0)
 	end
 end

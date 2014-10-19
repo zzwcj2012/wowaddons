@@ -75,7 +75,7 @@ local function CreateFrameWithIcon(icon,x,y,w,h,frameType)
 	t:SetAllPoints(f)
 	f.texture=t
 	local text = f:CreateFontString(nil, "OVERLAY")
-	text:SetFont(STANDARD_TEXT_FONT, 15, "OUTLINE")
+	text:SetFont(STANDARD_TEXT_FONT, 16, "OUTLINE")
 	text:SetAllPoints(true)
 	text:Hide()
 	f.text = text
@@ -109,6 +109,7 @@ end
 
 function CreateBuff(spell,x,y,w,h,o,target,ismine,duration,sound)
 	local c,_,z = GetSpellInfo(spell)
+	if not c then print(spell) return end
 	local f
 	local filter = nil
 	local cooldownFrame
@@ -140,51 +141,14 @@ function CreateBuff(spell,x,y,w,h,o,target,ismine,duration,sound)
 	Register(f,criteria,o, {UNIT_AURA = "UNIT_AURA"})
 end
 
-function CreateRapture(x,y,w,h,o)
-	local _, class = UnitClass("player")
-	if class ~= "PRIEST" then return end
-	local c,_,z = GetSpellInfo(17)
-	local f = CreateFrameWithIcon(z,x,y,w,h)
-	local eventFrame = CreateFrame("Frame")
-	local soundPlayed = true
-	eventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-	eventFrame.lastTime = 0
-	eventFrame:SetScript("OnEvent",function(self, event, ...)
-		local timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId = select(1, ...)
-		if eventType == "SPELL_ENERGIZE" then
-			local player_name = UnitName("player")
-			if destName == player_name and sourceName == player_name and spellId == 47755 then
-				self.lastTime = GetTime()
-				soundPlayed = false
-			end
-		end
-		if GetTime() - self.lastTime > 12  and not soundPlayed then
-				soundPlayed =  true
-				PlaySound("QUESTADDED")
-		end
-		if GetTime() - self.lastTime < 12 then
-			f.text:SetFormattedText("%.1f", 12 - GetTime() + self.lastTime)
-			f.text:Show()
-		else
-			f.text:Hide()
-		end
-	end)
-	eventFrame.lastTime = 0
-	local criteriaString = "return GetSpecialization() == 1"
-	local criteria = loadStringFast(criteriaString, {f = eventFrame,GetTime = GetTime, GetSpecialization = GetSpecialization})
-	Register(f,criteria,o)
-end
-
 Initialize()
 CreateCD(32379,0,0,128,128,0.5,[[IsSpellKnown(8092) and UnitHealth("target") > 0 and UnitHealth("target") / UnitHealthMax("target") < 0.2 and UnitIsEnemy("target","player")]]) --Death
 --CreateCD(8092,0,-120,48,48,0.5) --Mind Blast
 
-CreateBuff(31821,-160,-100,48,48,0.8,"player",nil) --Shadow Fiend
+CreateBuff(31821,-160,-100,48,48,0.8,"player",nil, 6) -- Devotion Aura
 CreateCD(10060,80,-120,48,48,0.5) --Power Infusion
 
 CreateBuff(137247,-190,-120,48,48,0.8,"player",nil, 4, "AuctionWindowOpen") --Lucidity
+CreateBuff(81700,-210,-140,48,48,0.8,"player",nil, 18) --ArchAngel
 
 CreateCD(34433,-170,-140,48,48,0.5,nil,nil,"AuctionWindowClose") --Shadow Fiend
-CreateRapture(-150,-120,48,48,0.5)
-CreateBuff(48517,-150,-120,48,48,0.8,"player",nil)
-CreateBuff(48518,-150,-120,48,48,0.8,"player",nil) 
